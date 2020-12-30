@@ -2,6 +2,7 @@ import discord
 import os
 import dotenv
 import asyncio
+import math
 
 # get secret token from .env file
 dotenv.load_dotenv()
@@ -10,10 +11,10 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 timeDict = {'s': 1, 'm': 60, 'h': 3600}
 bound_channels = {"im-gonna-do-a-question-for-an-hour", "spam"}
 admin_roles = {"super admin", "artem", "nice person"}
-msgDict = {"mute": "muted", "blind": "blinded"}
+msg_dict = {"mute": "muted", "blind": "blinded"}
 admin_commands = {"admin": admin_roles, "channel": bound_channels}
 admin_commands_txt = {"admin": "as an admin role", "channel": "as a bound channel"}
-max_time = 86,400
+max_time = 86400
 
 
 # would really love to avoid having to do this
@@ -70,13 +71,15 @@ Displays the current maximum mute/blind time.""")
 
                 # mute/blind command
                 if words[0] in roleDict.keys():
-                    newRole = roleDict[words[0]]
+                    new_role = roleDict[words[0]]
                     time = getTimeVal(words[1])
-                    await author.add_roles(newRole)
-                    await channel.send(msgDict[words[0]].title() + " " + author.name + " for " + getTimeStr(time) + " " + (multi if multi in timeDict.keys() else 'm'))
+                    await author.add_roles(new_role)
+                    await channel.send(msg_dict[words[0]].title() + " " + author.name + " for " + getTimeStr(time))
                     await asyncio.sleep(time)
-                    if newRole in discord.utils.get(client.get_all_members(), id = author.id).roles:
-                        await author.remove_roles(newRole)
+
+                    # fuckery needed to get update roles after wait
+                    if new_role in discord.utils.get(message.guild.members, id = author.id).roles:
+                        await author.remove_roles(new_role)
                         await channel.send(author.name + " is back!")
                     return
 
@@ -118,15 +121,17 @@ def getTimeVal(timeStr):
         base = timeStr[:-1]
         if base.isdigit():
             multi = timeStr[-1]
-            timeout = timeDict.get(multi, 60) * int(base)
-            timeout = min(timeout, max_time)
+            time = timeDict.get(multi, 60) * int(base)
+            time = min(time, max_time)
+            return time
     return -1
 
 # converts number of seconds into time string
 def getTimeStr(time):
+    print(time)
     secs = time % 60
-    mins = floor(time/60) % 60
-    hrs = floor(time/3600)
+    mins = math.floor(time/60) % 60
+    hrs = math.floor(time/3600)
     return str(hrs) + "h" + str(mins) + "m" + str(secs) + "s"
 
 client.run(TOKEN)
