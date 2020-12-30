@@ -8,7 +8,7 @@ import math
 dotenv.load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
-timeDict = {'s': 1, 'm': 60, 'h': 3600}
+time_dict = {'s': 1, 'm': 60, 'h': 3600}
 bound_channels = {"im-gonna-do-a-question-for-an-hour", "spam"}
 admin_roles = {"super admin", "artem", "nice person"}
 msg_dict = {"mute": "muted", "blind": "blinded"}
@@ -59,33 +59,36 @@ Displays the current maximum mute/blind time.""")
         return
 
     if type(channel).__name__ == "TextChannel" and type(author).__name__ == "Member":
+        global max_time
         is_admin = set([r.name for r in author.roles]).intersection(admin_roles) or author.permissions_in(channel).administrator
 
         # other commands
         if (channel.name in bound_channels or is_admin) and not (author.bot or author.system):
-            text = message.content
-            if text[0] == ";":
-                #get role to add
-                roleDict = {"mute": discord.utils.get(message.guild.roles, name="muted"), "blind": discord.utils.get(message.guild.roles, name="blind")}
-                words = text[1:].split(" ")
+            try:
+                text = message.content
+                if text[0] == ";":
+                    #get role to add
+                    roleDict = {"mute": discord.utils.get(message.guild.roles, name="muted"), "blind": discord.utils.get(message.guild.roles, name="blind")}
+                    words = text[1:].split(" ")
 
-                # mute/blind command
-                if words[0] in roleDict.keys():
-                    new_role = roleDict[words[0]]
-                    time = getTimeVal(words[1])
-                    await author.add_roles(new_role)
-                    await channel.send(msg_dict[words[0]].title() + " " + author.name + " for " + getTimeStr(time))
-                    await asyncio.sleep(time)
+                    # mute/blind command
+                    if words[0] in roleDict.keys():
+                        new_role = roleDict[words[0]]
+                        time = getTimeVal(words[1])
+                        time = min(time, max_time)
+                        await author.add_roles(new_role)
+                        await channel.send(msg_dict[words[0]].title() + " " + author.name + " for " + getTimeStr(time))
+                        await asyncio.sleep(time)
 
-                    # fuckery needed to get update roles after wait
-                    if new_role in discord.utils.get(message.guild.members, id = author.id).roles:
-                        await author.remove_roles(new_role)
-                        await channel.send(author.name + " is back!")
-                    return
+                        # fuckery needed to get update roles after wait
+                        if new_role in discord.utils.get(message.guild.members, id = author.id).roles:
+                            await author.remove_roles(new_role)
+                            await channel.send(author.name + " is back!")
+                        return
 
-                # admin-only commands
-                if is_admin:
-                    if words[0] == "clear":
+                    # admin-only commands
+                    if is_admin:
+                        if words[0] == "clear":
                             savedUsers = message.mentions
                             for u in savedUsers:
                                 await u.remove_roles(roleDict["mute"])
@@ -93,45 +96,46 @@ Displays the current maximum mute/blind time.""")
                             await channel.send(author.name + " force cleared " + "".join([(u.name + ", ") for u in savedUsers[:-1]]) + (" and " if len(savedUsers) > 1 else "") + savedUsers[-1].name)
                             return
 
-                    if words[0] in admin_commands.keys():
-                        arg = words[2]
-                        if words[1] == "add":
-                            admin_commands[words[0]].add(words[2])
-                            await channel.send("Added " + words[2] + " " + admin_commands_txt[words[0]])
-                        elif words[1] == "remove":
-                            admin_commands[words[0]].remove(words[2])
-                            await channel.send("Removed " + words[2] + " " + admin_commands_txt[words[0]])
-                        elif words[1] == "display":
-                            await channel.send([o.name for o in admin_commands[words[0]]])
-                        return
+                        if words[0] in admin_commands.keys():
+                            if words[1] == "add":
+                                admin_commands[words[0]].add(words[2])
+                                await channel.send("Added " + words[2] + " " + admin_commands_txt[words[0]])
+                            elif words[1] == "remove":
+                                admin_commands[words[0]].remove(words[2])
+                                await channel.send("Removed " + words[2] + " " + admin_commands_txt[words[0]])
+                            elif words[1] == "display":
+                                await channel.send(admin_commands[words[0]])
+                            return
 
-                    if words[0] == "maxtime":
-                        if words[1] == "display":
-                            await channel.send("Maximum time is " + getTimeStr(max_time))
-                        elif words[1] == "set":
-                            new_time = getTimeVal(words[2])
-                            if new_time != -1:
-                                max_time = new_time
-                                await channel.send("Set max time to " +getTimeStr(words[2]))
+                        if words[0] == "maxtime":
+                            if words[1] == "display":
+                                await channel.send("Maximum time is " + getTimeStr(max_time))
+                            elif words[1] == "set":
+                                new_time = getTimeVal(words[2])
+                                if new_time != -1:
+                                    max_time = new_time
+                                    await channel.send("Set max time to " + getTimeStr(new_time))
+                                else:
+                                    await channel.send("Could not set max time")
+            except:
+                await channel.send("Could not execute command, try using ;help :slight_smile:")
 
 # converts time string into numerical value (-1 if it fails)
 def getTimeVal(timeStr):
-    # need to improve this
+    # need to improve this to read eg 1h30m or 1h 30m
     if len(timeStr) > 1:
         base = timeStr[:-1]
         if base.isdigit():
             multi = timeStr[-1]
-            time = timeDict.get(multi, 60) * int(base)
-            time = min(time, max_time)
+            time = time_dict.get(multi, 60) * int(base)
             return time
     return -1
 
 # converts number of seconds into time string
 def getTimeStr(time):
-    print(time)
     secs = time % 60
     mins = math.floor(time/60) % 60
     hrs = math.floor(time/3600)
-    return str(hrs) + "h" + str(mins) + "m" + str(secs) + "s"
+    return str(hrs) + "h " + str(mins) + "m " + str(secs) + "s"
 
 client.run(TOKEN)
