@@ -52,7 +52,7 @@ Adds or removes the specified channel as a usable channel for the mute and blind
 **;channel display**
 Displays the current bound channels.\n
 **;maxtime [set] [time][s/m/h]**
-Sets the maximum mute/blind time.
+Sets the maximum mute/blind time.\n
 **;maxtime display**
 Displays the current maximum mute/blind time.""")
         return
