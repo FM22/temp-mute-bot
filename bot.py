@@ -30,88 +30,86 @@ async def on_ready():
 async def on_message(message):
     author = message.author
     channel = message.channel
-    is_admin = intersection(set([r.name for r in author.roles]), admin_roles) or author.permissions_in(channel).administrator
-    admin_fail = False
 
     # help command
     if not (author.bot or author.system) and message.content == ';help':
-        await author.send("""
-        *User Commands (only work in work/spam channels):*\n
-        **;mute [time][s/m/h]**\n
-        Mutes you for a specified amount of time.\n
-        Only works in the work channel.\n\n
-        **;blind [time][s/m/h]**\n
-        Blinds you for a specified amount of time.\n
-        Only works in the work channel.\n\n
-        *Admin only commands:*\n
-        **;clear [@user1] [@user2] ...**\n
-        Unmutes and unblinds specified users.\n\n
-        **;admin [add/remove] [role name]**\n
-        Adds or removes the specified role as an admin role for this bot.\n\n
-        **;admin display**\n
-        Displays the current admin roles.\n\n
-        **;channel [add/remove] [channel name]**\n
-        Adds or removes the specified channel as a usable channel for the mute and blind commands\n\n
-        **;channel display**\n
-        Displays the current bound channels.\n\n
-        **;maxtime [set] [time][s/m/h]**\n
-        Sets the maximum mute/blind time.
-        **;maxtime display**\n
-        Displays the current maximum mute/blind time.\n\n""")
+        await author.send("""*User Commands (only work in work/spam channels):*
+**;mute [time][s/m/h]**
+Mutes you for a specified amount of time.
+Only works in the work channel.\n
+**;blind [time][s/m/h]**
+Blinds you for a specified amount of time.
+Only works in the work channel.\n
+*Admin only commands:*
+**;clear [@user1] [@user2] ...**
+Unmutes and unblinds specified users.\n
+**;admin [add/remove] [role name]**
+Adds or removes the specified role as an admin role for this bot.\n
+**;admin display**
+Displays the current admin roles.\n
+**;channel [add/remove] [channel name]**
+Adds or removes the specified channel as a usable channel for the mute and blind commands\n
+**;channel display**
+Displays the current bound channels.\n
+**;maxtime [set] [time][s/m/h]**
+Sets the maximum mute/blind time.
+**;maxtime display**
+Displays the current maximum mute/blind time.""")
         return
 
-    # other commands
-    if type(channel).__name__ == "TextChannel" and type(author).__name__ == "Member" and (channel.name in bound_channels or is_admin) and not (author.bot or author.system):
-        text = message.content
-        if text[0] == ";":
-            #get role to add
-            roleDict = {"mute": discord.utils.get(message.guild.roles, name="muted"), "blind": discord.utils.get(message.guild.roles, name="blind")}
-            words = text[1:].split(" ")
+    if type(channel).__name__ == "TextChannel" and type(author).__name__ == "Member":
+        is_admin = set([r.name for r in author.roles]).intersection(admin_roles) or author.permissions_in(channel).administrator
 
-            # mute/blind command
-            if words[0] in roleDict.keys():
-                newRole = roleDict[words[0]]
-                time = getTimeVal(words[1])
-                await author.add_roles(newRole)
-                await channel.send(msgDict[words[0]].title() + " " + author.name + " for " + getTimeStr(time) + " " + (multi if multi in timeDict.keys() else 'm'))
-                await asyncio.sleep(time)
-                if newRole in discord.utils.get(client.get_all_members(), id = author.id).roles:
-                    await author.remove_roles(newRole)
-                    await channel.send(author.name + " is back!")
-                return
+        # other commands
+        if (channel.name in bound_channels or is_admin) and not (author.bot or author.system):
+            text = message.content
+            if text[0] == ";":
+                #get role to add
+                roleDict = {"mute": discord.utils.get(message.guild.roles, name="muted"), "blind": discord.utils.get(message.guild.roles, name="blind")}
+                words = text[1:].split(" ")
 
-            # admin-only commands
-            if is_admin:
-                if words[0] == "clear":
-                        savedUsers = message.mentions
-                        for u in savedUsers:
-                            await u.remove_roles(roleDict["mute"])
-                            await u.remove_roles(roleDict["blind"])
-                        await channel.send(author.name + " force cleared " + "".join([(u.name + ", ") for u in savedUsers[:-1]]) + (" and " if len(savedUsers) > 1 else "") + savedUsers[-1].name)
-                        return
-
-                if words[0] in admin_commands.keys():
-                    arg = words[2]
-                    if words[1] == "add":
-                        admin_commands[words[0]].add(words[2])
-                        await channel.send("Added " + words[2] + " " + admin_commands_txt[words[0]])
-                    elif words[1] == "remove":
-                        admin_commands[words[0]].remove(words[2])
-                        await channel.send("Removed " + words[2] + " " + admin_commands_txt[words[0]])
-                    elif words[1] == "display":
-                        await channel.send([o.name for o in admin_commands[words[0]]])
+                # mute/blind command
+                if words[0] in roleDict.keys():
+                    newRole = roleDict[words[0]]
+                    time = getTimeVal(words[1])
+                    await author.add_roles(newRole)
+                    await channel.send(msgDict[words[0]].title() + " " + author.name + " for " + getTimeStr(time) + " " + (multi if multi in timeDict.keys() else 'm'))
+                    await asyncio.sleep(time)
+                    if newRole in discord.utils.get(client.get_all_members(), id = author.id).roles:
+                        await author.remove_roles(newRole)
+                        await channel.send(author.name + " is back!")
                     return
 
-                if words[0] == "maxtime":
-                    if words[1] == "display":
-                        await channel.send("Maximum time is " + getTimeStr(max_time))
-                    elif words[1] == "set":
-                        new_time = getTimeVal(words[2])
-                        if new_time != -1:
-                            max_time = new_time
-                            await channel.send("Set max time to " +getTimeStr(words[2]))
-            else:
-                await author.send("Get an admin to do this :slight_smile:")
+                # admin-only commands
+                if is_admin:
+                    if words[0] == "clear":
+                            savedUsers = message.mentions
+                            for u in savedUsers:
+                                await u.remove_roles(roleDict["mute"])
+                                await u.remove_roles(roleDict["blind"])
+                            await channel.send(author.name + " force cleared " + "".join([(u.name + ", ") for u in savedUsers[:-1]]) + (" and " if len(savedUsers) > 1 else "") + savedUsers[-1].name)
+                            return
+
+                    if words[0] in admin_commands.keys():
+                        arg = words[2]
+                        if words[1] == "add":
+                            admin_commands[words[0]].add(words[2])
+                            await channel.send("Added " + words[2] + " " + admin_commands_txt[words[0]])
+                        elif words[1] == "remove":
+                            admin_commands[words[0]].remove(words[2])
+                            await channel.send("Removed " + words[2] + " " + admin_commands_txt[words[0]])
+                        elif words[1] == "display":
+                            await channel.send([o.name for o in admin_commands[words[0]]])
+                        return
+
+                    if words[0] == "maxtime":
+                        if words[1] == "display":
+                            await channel.send("Maximum time is " + getTimeStr(max_time))
+                        elif words[1] == "set":
+                            new_time = getTimeVal(words[2])
+                            if new_time != -1:
+                                max_time = new_time
+                                await channel.send("Set max time to " +getTimeStr(words[2]))
 
 # converts time string into numerical value (-1 if it fails)
 def getTimeVal(timeStr):
