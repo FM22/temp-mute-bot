@@ -15,6 +15,7 @@ msg_dict = {"mute": "muted", "blind": "blinded"}
 admin_commands = {"admin": admin_roles, "channel": bound_channels}
 admin_commands_txt = {"admin": "as an admin role", "channel": "as a bound channel"}
 max_time = 86400
+fail_text = "Could not execute command, try using ;help :slight_smile:"
 
 
 # would really love to avoid having to do this
@@ -64,9 +65,9 @@ Displays the current maximum mute/blind time.""")
 
         # other commands
         if (channel.name in bound_channels or is_admin) and not (author.bot or author.system):
-            try:
-                text = message.content
-                if text[0] == ";":
+            text = message.content
+            if text[0] == ";":
+                try:
                     #get role to add
                     roleDict = {"mute": discord.utils.get(message.guild.roles, name="muted"), "blind": discord.utils.get(message.guild.roles, name="blind")}
                     words = text[1:].split(" ")
@@ -75,16 +76,19 @@ Displays the current maximum mute/blind time.""")
                     if words[0] in roleDict.keys():
                         new_role = roleDict[words[0]]
                         time = getTimeVal(words[1])
-                        time = min(time, max_time)
-                        await author.add_roles(new_role)
-                        await channel.send(msg_dict[words[0]].title() + " " + author.name + " for " + getTimeStr(time))
-                        await asyncio.sleep(time)
+                        if time != -1:
+                            time = min(time, max_time)
+                            await author.add_roles(new_role)
+                            await channel.send(msg_dict[words[0]].title() + " " + author.name + " for " + getTimeStr(time))
+                            await asyncio.sleep(time)
 
-                        # fuckery needed to get update roles after wait
-                        if new_role in discord.utils.get(message.guild.members, id = author.id).roles:
-                            await author.remove_roles(new_role)
-                            await channel.send(author.name + " is back!")
-                        return
+                            # fuckery needed to get updated roles after wait
+                            if new_role in discord.utils.get(message.guild.members, id = author.id).roles:
+                                await author.remove_roles(new_role)
+                                await channel.send(author.name + " is back!")
+                            return
+                        else:
+                            await channel.send(fail_text)
 
                     # admin-only commands
                     if is_admin:
@@ -116,9 +120,9 @@ Displays the current maximum mute/blind time.""")
                                     max_time = new_time
                                     await channel.send("Set max time to " + getTimeStr(new_time))
                                 else:
-                                    await channel.send("Could not set max time")
-            except:
-                await channel.send("Could not execute command, try using ;help :slight_smile:")
+                                    await channel.send(fail_text)
+                except:
+                    await channel.send(fail_text)
 
 # converts time string into numerical value (-1 if it fails)
 def getTimeVal(timeStr):
