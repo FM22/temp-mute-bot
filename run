@@ -1,0 +1,15 @@
+pid=`cat pid`
+> pid
+> nohup.out
+kill -9 $pid
+
+args=`getopt :u $*`
+set -- $args
+for i
+do
+  case "$i" in
+        -u) git pull origin main
+  esac
+done
+
+exec nohup python3 bot.py & echo $! > pid
