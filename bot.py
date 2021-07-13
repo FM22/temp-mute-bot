@@ -8,6 +8,7 @@ import math
 dotenv.load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
+admin_cmd_prefix = "m"
 time_dict = {'s': 1, 'm': 60, 'h': 3600}
 bound_channels = {"im-gonna-do-a-question-for-an-hour", "spam"}
 admin_roles = {"super admin", "artem", "nice person"}
@@ -100,22 +101,22 @@ Displays the current maximum mute/blind time.""")
                             await channel.send(author.name + " force cleared " + "".join([(u.name + ", ") for u in savedUsers[:-1]]) + (" and " if len(savedUsers) > 1 else "") + savedUsers[-1].name)
                             return
 
-                        if words[0] in admin_commands.keys():
-                            if words[1] == "add":
-                                admin_commands[words[0]].add(words[2])
-                                await channel.send("Added " + words[2] + " " + admin_commands_txt[words[0]])
-                            elif words[1] == "remove":
-                                admin_commands[words[0]].remove(words[2])
-                                await channel.send("Removed " + words[2] + " " + admin_commands_txt[words[0]])
-                            elif words[1] == "display":
-                                await channel.send(admin_commands[words[0]])
+                        if words[0] == admin_cmd_prefix and words[1] in admin_commands.keys():
+                            if words[2] == "add":
+                                admin_commands[words[1]].add(words[3])
+                                await channel.send("Added " + words[3] + " " + admin_commands_txt[words[1]])
+                            elif words[2] == "remove":
+                                admin_commands[words[1]].remove(words[3])
+                                await channel.send("Removed " + words[3] + " " + admin_commands_txt[words[1]])
+                            elif words[2] == "display":
+                                await channel.send(admin_commands[words[1]])
                             return
 
-                        if words[0] == "maxtime":
-                            if words[1] == "display":
+                        if words[0] == admin_cmd_prefix and words[1] == "maxtime":
+                            if words[2] == "display":
                                 await channel.send("Maximum time is " + getTimeStr(max_time))
-                            elif words[1] == "set":
-                                new_time = getTimeVal(words[2])
+                            elif words[2] == "set":
+                                new_time = getTimeVal(words[3])
                                 if new_time != -1:
                                     max_time = new_time
                                     await channel.send("Set max time to " + getTimeStr(new_time))
