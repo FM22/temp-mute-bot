@@ -10,7 +10,7 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 
 admin_cmd_prefix = "m"
 time_dict = {'s': 1, 'm': 60, 'h': 3600}
-bound_channels = {"im-gonna-do-a-question-for-an-hour", "spam"}
+bound_channels = {"bot-commands"}
 admin_roles = {"super admin", "artem", "nice person"}
 msg_dict = {"mute": "muted", "blind": "blinded"}
 admin_commands = {"admin": admin_roles, "channel": bound_channels}
