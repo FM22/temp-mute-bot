@@ -44,19 +44,19 @@ Only works in the work channel.\n
 Blinds you for a specified amount of time.
 Only works in the work channel.\n
 *Admin only commands:*
-**;clear [@user1] [@user2] ...**
+**;m clear [@user1] [@user2] ...**
 Unmutes and unblinds specified users.\n
-**;admin [add/remove] [role name]**
+**;m admin [add/remove] [role name]**
 Adds or removes the specified role as an admin role for this bot.\n
-**;admin display**
+**;m admin display**
 Displays the current admin roles.\n
-**;channel [add/remove] [channel name]**
+**;m channel [add/remove] [channel name]**
 Adds or removes the specified channel as a usable channel for the mute and blind commands\n
-**;channel display**
+**;m channel display**
 Displays the current bound channels.\n
-**;maxtime [set] [time][s/m/h]**
+**;m maxtime [set] [time][s/m/h]**
 Sets the maximum mute/blind time.\n
-**;maxtime display**
+**;m maxtime display**
 Displays the current maximum mute/blind time.""")
         return
 
