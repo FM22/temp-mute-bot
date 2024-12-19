@@ -22,6 +22,7 @@ fail_text = "Could not execute command, try using ;help :slight_smile:"
 # would really love to avoid having to do this
 intents = discord.Intents.default()
 intents.members = True
+intents.message_content = True
 client = discord.Client(intents = intents)
 
 @client.event
